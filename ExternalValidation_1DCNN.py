@@ -39,7 +39,7 @@ def train_model(source, threshold, best_model_params, X_train, y_train, X_val, y
     )
 
     trainer = pl.Trainer(
-        max_epochs=20,
+        max_epochs=100,
         gpus=-1 if torch.cuda.is_available() else 0,
         callbacks=[checkpoint_callback],
         progress_bar_refresh_rate=20,

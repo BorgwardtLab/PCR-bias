@@ -51,7 +51,7 @@ def train_and_evaluate_model(X_src, y_src, params, fold_count, model_id, filenam
     )
 
     trainer = pl.Trainer(
-        max_epochs=20,
+        max_epochs=100,
         gpus=-1 if torch.cuda.is_available() else 0,
         callbacks=[checkpoint_callback],
         progress_bar_refresh_rate=20,
@@ -108,7 +108,7 @@ def main():
     filename, threshold = args.filename, args.threshold
 
     X_src, y_src = load_data(filename, threshold)
-    param_sampler = ParameterSampler(CNN_hyper_params, n_iter=3)
+    param_sampler = ParameterSampler(CNN_hyper_params, n_iter=50)
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=1)
 
     metrics_summary = []

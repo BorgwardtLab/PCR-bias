@@ -15,14 +15,14 @@ all_datasets = [
 ]
 
 CNN_hyper_params = {
-    "num_layers": [1],
+    "num_layers": [1, 2, 3],
     "linear_dim": [16, 32, 64],
     "n_filters": [32, 64, 128],
     "len_filters": [4, 8, 12],
     "AdaPool": ["Avg", "Max"],
-    "LR": [1e-3],
-    "batch_size": [128],
-    "wd": [1e-5, 0],
+    "LR": [1e-3, 1e-4, 1e-5],
+    "batch_size": [64, 128, 256],
+    "wd": [1e-3, 1e-4, 0],
     "use_PE": [True],
     "use_class_weight": [True, False],
 }
