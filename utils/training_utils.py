@@ -26,6 +26,19 @@ CNN_hyper_params = {
     "use_PE": [True],
     "use_class_weight": [True, False],
 }
+
+RNN_hyper_params = {
+    "rnn_type":['RNN', 'LSTM', 'GRU'],
+    "embedding_dim":[32, 64, 128,],
+    "n_layer":[1,2,3],
+    "hidden_dim":[32, 64, 128],
+    "AdaPool": ["Avg", "Max"],
+    "LR": [1e-3, 1e-4, 1e-5],
+    "batch_size": [64, 128, 256],
+    "wd": [1e-3, 1e-4, 0],
+    "use_class_weight": [True, False],
+}
+
 def get_data(ext_file_name: str, threshold: str):
     seqs = pd.read_pickle(
         "Data/{}/bad_seqs_{}.pkl".format(

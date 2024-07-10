@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import logomaker
 import warnings
 from sklearn.model_selection import StratifiedKFold
+from sklearn.metrics import average_precision_score, roc_auc_score
 from model import CNN
 import pickle
 from pathlib import Path
@@ -32,8 +33,8 @@ class CLAMAnalysis:
         Path(self.attr_save_path).mkdir(parents=True, exist_ok=True)
         Path(self.motif_save_path).mkdir(parents=True, exist_ok=True)
 
-    def get_data_with_q(self):
-        seqs = pd.read_pickle(f"data/{self.filename}/bad_seqs_{self.threshold}.pkl")
+    def get_data_with_q(self, source, threshold):
+        seqs = pd.read_pickle(f"data/{source}/bad_seqs_{threshold}.pkl")
         rest_seqs = seqs["rest"]["sequence"]
         bot_seqs = seqs["bottom"]["sequence"]
         q = pd.concat([seqs["bottom"].eff, seqs["rest"].eff])
@@ -67,7 +68,7 @@ class CLAMAnalysis:
         plt.close()
 
     def feature_attribution(self):
-        X_src, y_src, q_src = self.get_data_with_q()
+        X_src, y_src, q_src = self.get_data_with_q(self.filename, self.threshold)
         cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=1)
         all_attributions, all_qs, all_labels, all_seqs = [], [], [], []
         # Load the model and perform feature attribution
@@ -91,6 +92,58 @@ class CLAMAnalysis:
 
         with open(f"{self.attr_save_path}/attributions.pkl", "wb") as fp:
             pickle.dump([all_attributions, all_seqs, all_labels, all_qs], fp)
+
+    def replace_motifs(self, X_tar, significant_motifs, top_k):
+        sequence_length = X_tar.shape[1]
+        for k, (p_values, pwm) in enumerate(significant_motifs):
+            pwm = torch.tensor(pwm)
+            pwm_length = pwm.shape[1]
+            avg_subseq = torch.full((pwm_length, 4), 0.25)
+            for j, seq in enumerate(X_tar):
+                for i in range(sequence_length - pwm_length + 1):
+                    window = X_tar[j, i:i + pwm_length, :]
+                    score = torch.sum(pwm * window.T) / pwm_length
+                    if score >= 0.5:
+                        X_tar[j, i: i + pwm_length, :] = avg_subseq
+            if k == top_k:
+                break
+        return X_tar
+
+    def motif_substituition_internal(self, target, threshold):
+        significant_motifs = pd.read_pickle(f"Motifs/{target}/{threshold}/significantly_enriched_motifs.pkl").sort(
+            key=lambda x: x[2])
+        X_src, y_src, q_src =  self.get_data_with_q(target, threshold)
+        cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=1)
+        metrics_summary = pd.DataFrame(columns=["test_auprc", "test_auroc"],
+                                       index=pd.MultiIndex.from_product([range(5), range(len(significant_motifs))]))
+
+        for fold_count, (train_idx, test_idx) in enumerate(cv.split(X_src, y_src)):
+            X_train, X_test = X_src[train_idx], X_src[test_idx]
+            y_train, y_test = y_src[train_idx], y_src[test_idx]
+
+            model = CNN.load_from_checkpoint(f"CNN/model/internal/{target}/{threshold}/best_model_fold_{fold_count}.ckpt")
+            for top_k in range(len(significant_motifs)):
+                X_test_sub = self.replace_motifs(X_test.clone(), significant_motifs, top_k)
+                pred_test= model(X_test_sub.float())[:, 1]
+                auprc = average_precision_score(y_test.numpy(), pred_test.detach().numpy())
+                auroc = roc_auc_score(y_test.detach().numpy(), pred_test.detach().numpy())
+                metrics_summary.loc[fold_count, top_k] = [auprc, auroc]
+        metrics_summary.to_csv(f"CNN/results/internal/{target}/{threshold}/motif_substitution_internal.csv")
+
+    def motif_substituition_external(self, source, target, threshold):
+        significant_motifs = pd.read_pickle(f"Motifs/{target}/{threshold}/significantly_enriched_motifs.pkl").sort(
+            key=lambda x: x[2])
+        X_test, y_test, q_test = self.get_data_with_q(target, threshold)
+        model = CNN.load_from_checkpoint(f"CNN/model/external/{source}/{threshold}/best_model.ckpt")
+        metrics_summary = pd.DataFrame(columns=["test_auprc", "test_auroc"], index=range(len(significant_motifs)))
+
+        for top_k in range(len(significant_motifs)):
+            X_test_sub = self.replace_motifs(X_test.clone(), significant_motifs, top_k)
+            pred_test = model(X_test_sub.float())[:, 1]
+            auprc = average_precision_score(y_test.numpy(), pred_test.detach().numpy())
+            auroc = roc_auc_score(y_test.detach().numpy(), pred_test.detach().numpy())
+            metrics_summary.loc[top_k] = [auprc, auroc]
+        metrics_summary.to_csv(f"CNN/results/internal/{source}/{threshold}/motif_substitution_{target}.csv")
 
     def PWM_construction(self):
         seqs_attr, seqs_onehot, seqs_label, seqs_q = np.load(f"{self.attr_save_path}/attributions.pkl", allow_pickle=True)
