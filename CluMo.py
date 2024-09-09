@@ -23,7 +23,7 @@ from utils.motif_utils import (
 
 warnings.filterwarnings("ignore")
 
-class CLAMAnalysis:
+class CluMo:
     def __init__(self, filename: str, threshold: int):
         self.filename = filename
         self.threshold = threshold
@@ -230,6 +230,6 @@ if __name__ == "__main__":
     parser.add_argument("--threshold", type=str, required=True)
     args = parser.parse_args()
 
-    clam_analysis = CLAMAnalysis(args.filename, args.threshold)
-    clam_analysis.feature_attribution()
-    clam_analysis.statistical_test()
+    motif_analysis = CluMo(args.filename, args.threshold)
+    motif_analysis.feature_attribution()
+    motif_analysis.statistical_test()
