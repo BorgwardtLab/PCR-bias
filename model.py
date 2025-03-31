@@ -12,51 +12,64 @@ activation_dict = {
     "sigmoid": nn.Sigmoid(),
 }
 
-normalization_dict = {
-    "batchnorm": nn.BatchNorm1d,
-    "instancenorm": nn.InstanceNorm1d
-}
+normalization_dict = {"batchnorm": nn.BatchNorm1d, "instancenorm": nn.InstanceNorm1d}
 
-pooling_dic = {
-    "Avg": nn.AdaptiveAvgPool1d(1),
-    "Max": nn.AdaptiveMaxPool1d(1)
-}
+pooling_dic = {"Avg": nn.AdaptiveAvgPool1d(1), "Max": nn.AdaptiveMaxPool1d(1)}
+
 
 class CNN_1D_withPE(nn.Module):
-
     def __init__(
         self,
-        number_layers: int,
-        linear_dim: int,
-        n_filters: int,
-        len_filters: int,
-        normalization: str,
-        activation: str,
-        AdaPool: str,
-        use_PE: bool,
-        num_classes: int,
+        linear_dim,
+        n_filters,
+        len_filters,
+        normalization,
+        norm_first,
+        activation,
+        AdaPool,
+        use_PE=False,
+        with_reverse=False,
+        num_classes=2,
     ):
         super().__init__()
-        input_dim = 4
+
+        if with_reverse:
+            input_dim = 8
+        else:
+            input_dim = 4
+
         activation = activation_dict[activation]
-        normalization = normalization_dict[normalization]
 
-        self.linear_dim = linear_dim
-        self.use_PE = use_PE
-        self.linear_layer = nn.Linear(input_dim, self.linear_dim)
-        self.encoder = nn.ModuleList()
-        for i in range(number_layers):
-            if i == 0:
-                in_dim = linear_dim
+        # Encoder Layers
+        self.encoder = nn.ModuleList(
+            [
+                nn.Linear(input_dim, linear_dim),
+                nn.Conv1d(linear_dim, n_filters, len_filters),
+                activation,
+            ]
+        )
+
+        if normalization is not None:
+            normalization = normalization_dict[normalization]
+            if norm_first:
+                self.encoder.insert(
+                    2, normalization(n_filters)
+                )  # After first activation
             else:
-                in_dim = n_filters
-            self.encoder.append(nn.Conv1d(in_dim, n_filters, len_filters))
-            self.encoder.append(activation)
-            self.encoder.append(normalization(n_filters))
+                self.encoder.append(normalization(n_filters))  # After convolution
 
-        self.pool = pooling_dic[AdaPool]
+        # Pooling Layer
+        if AdaPool == "Avg":
+            self.pool = nn.AdaptiveAvgPool1d(1)
+        elif AdaPool == "Max":
+            self.pool = nn.AdaptiveMaxPool1d(1)
+
+        # Classifier Layer
         self.classifier = nn.Linear(n_filters, num_classes)
 
+        # Positional Encoding Dimension
+        self.use_PE = use_PE
+        self.linear_dim = linear_dim
 
     def generate_positional_encodings(self, sequence_length, x):
         position = np.arange(sequence_length)[:, np.newaxis]
@@ -75,20 +88,27 @@ class CNN_1D_withPE(nn.Module):
         return positional_encodings
 
     def forward(self, x):
-        # Linear embedding
-        x = torch.swapaxes(self.linear_layer(x), 1, 2)
-        # Add positional encodings if use_PE set to True
+        # Linear projection
+        x = self.encoder[0](x)
+        x = torch.swapaxes(x, 1, 2)
+        # Add positional encodings if use_PE is True
         if self.use_PE:
             pe = self.generate_positional_encodings(x.shape[2], x).float().to(x.device)
+            # pe = self.generate_positional_encodings(x.shape[2], x).float()
             x = x + pe
+
         # Encoding through the rest of the layers
-        for layer in self.encoder:
+        for layer in self.encoder[1:]:
             x = layer(x)
+
         # Pooling
         if self.pool is not None:
             x = self.pool(x)
-        # Classifier
-        x = self.classifier(torch.squeeze(x))
+
+        # Squeeze and Classifying
+        x = torch.squeeze(x)
+        x = self.classifier(x)
+
         return x
 
 
@@ -97,22 +117,18 @@ class CNN(pl.LightningModule):
         super().__init__()
         self.save_hyperparameters(hparams)
         self.model = CNN_1D_withPE(
-            number_layers=self.hparams['num_layers'],
-            linear_dim=self.hparams['linear_dim'],
-            n_filters=self.hparams['n_filters'],
-            len_filters=self.hparams['len_filters'],
-            normalization="batchnorm",
-            activation="relu",
-            AdaPool=self.hparams['AdaPool'],
-            use_PE=self.hparams['use_PE'],
-            num_classes=2
+            linear_dim=self.hparams["linear_dim"],
+            n_filters=self.hparams["n_filter"],
+            len_filters=self.hparams["len_filter"],
+            normalization=self.hparams["normalization"],
+            norm_first=self.hparams["norm_first"],
+            activation= self.hparams["activation"],
+            AdaPool=self.hparams["AdaPool"],
+            use_PE=self.hparams["use_PE"],
+            num_classes=2,
         )
-        if self.hparams['use_class_weight']:
-            self.criterion = nn.CrossEntropyLoss(
-                weight=torch.tensor([self.hparams['threshold'], 100 - self.hparams['threshold']]).float().to(
-                    self.device))
-        else:
-            self.criterion = nn.CrossEntropyLoss()
+
+        self.criterion = nn.CrossEntropyLoss()
 
         # Validation metrics
         self.val_auprc = torchmetrics.AveragePrecision(num_classes=2)
@@ -125,7 +141,7 @@ class CNN(pl.LightningModule):
         x, y = batch
         logits = self(x.float())
         loss = self.criterion(logits, y)
-        self.log('train_loss', loss, on_step=False, on_epoch=True, prog_bar=True)
+        self.log("train_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -139,12 +155,12 @@ class CNN(pl.LightningModule):
     def validation_epoch_end(self, outputs):
         auprc = self.val_auprc.compute()
         auroc = self.val_auroc.compute()
-        self.log('val_auprc', auprc, on_epoch=True, prog_bar=True)
-        self.log('val_auroc', auroc, on_epoch=True, prog_bar=True)
+        self.log("val_auprc", auprc, on_epoch=True, prog_bar=True)
+        self.log("val_auroc", auroc, on_epoch=True, prog_bar=True)
         self.val_auprc.reset()
         self.val_auroc.reset()
 
     def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters(), lr=self.hparams['LR'], weight_decay=self.hparams['wd'])
-
-
+        return torch.optim.Adam(
+            self.parameters(), lr=self.hparams["LR"], weight_decay=self.hparams["weight_decay"]
+        )

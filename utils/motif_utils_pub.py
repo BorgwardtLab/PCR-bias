@@ -9,18 +9,6 @@ from sklearn.metrics import silhouette_score
 from sklearn.cluster import KMeans
 
 
-def get_DNA_seq_array(seq):
-    alpha = "ACGT"
-    row = len(seq)
-    new_array = np.zeros((row, 4))
-
-    for i, val in enumerate(seq):
-        index = alpha.index(val)
-        new_array[i][index] = 1
-
-    return new_array
-
-
 def representation(X, with_reverse):
     reformed_seqs = []
     for i in range(len(X)):

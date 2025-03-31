@@ -5,46 +5,17 @@ from torch.utils.data import DataLoader, TensorDataset
 import pytorch_lightning as pl
 
 all_datasets = [
-     'Choi_et_al',
-     'Erlich_et_al',
-     'Gao_et_al',
-     'GCall',
-     'GCfix',
-     'Koch_et_al',
-     'Song_et_al'
+    "Choi_et_al",
+    "Erlich_et_al",
+    "Gao_et_al",
+    "GCall",
+    "GCfix",
+    "Koch_et_al",
+    "Song_et_al",
 ]
 
-CNN_hyper_params = {
-    "num_layers": [1, 2, 3],
-    "linear_dim": [16, 32, 64],
-    "n_filters": [32, 64, 128],
-    "len_filters": [4, 8, 12],
-    "AdaPool": ["Avg", "Max"],
-    "LR": [1e-3, 1e-4, 1e-5],
-    "batch_size": [64, 128, 256],
-    "wd": [1e-3, 1e-4, 0],
-    "use_PE": [True],
-    "use_class_weight": [True, False],
-}
-
-RNN_hyper_params = {
-    "rnn_type":['RNN', 'LSTM', 'GRU'],
-    "embedding_dim":[32, 64, 128,],
-    "n_layer":[1,2,3],
-    "hidden_dim":[32, 64, 128],
-    "AdaPool": ["Avg", "Max"],
-    "LR": [1e-3, 1e-4, 1e-5],
-    "batch_size": [64, 128, 256],
-    "wd": [1e-3, 1e-4, 0],
-    "use_class_weight": [True, False],
-}
-
 def get_data(ext_file_name: str, threshold: str):
-    seqs = pd.read_pickle(
-        "Data/{}/bad_seqs_{}.pkl".format(
-            ext_file_name, threshold
-        )
-    )
+    seqs = pd.read_pickle("Data/{}/bad_seqs_{}.pkl".format(ext_file_name, threshold))
     rest_seqs = seqs["rest"]["sequence"]
     bot_seqs = seqs["bottom"]["sequence"]
     seqs = np.hstack([bot_seqs, rest_seqs])
@@ -53,6 +24,7 @@ def get_data(ext_file_name: str, threshold: str):
     X_tar = torch.tensor(X_tar)
     y_tar = torch.tensor(labels)
     return X_tar, y_tar
+
 
 def reverse_complement(dna):
     complement = {"A": "T", "C": "G", "G": "C", "T": "A"}
@@ -88,6 +60,7 @@ def get_DNA_seq_array(seq):
 
     return new_array
 
+
 def representation(X, with_reverse):
     reformed_seqs = []
     for i in range(len(X)):
@@ -100,21 +73,21 @@ def representation(X, with_reverse):
     return reformed_seqs
 
 class DNADataModule(pl.LightningDataModule):
-    def __init__(self, X_train, y_train, X_val, y_val, batch_size, X_test=None, y_test=None):
+    def __init__(self, X_train, y_train, X_val, y_val, batch_size=64):
         super().__init__()
-        self.train_dataset = TensorDataset(X_train, y_train)
-        self.val_dataset = TensorDataset(X_val, y_val)
-        self.test_dataset = TensorDataset(X_test, y_test) if X_test is not None and y_test is not None else None
+        self.X_train = X_train
+        self.y_train = y_train
+        self.X_val = X_val
+        self.y_val = y_val
         self.batch_size = batch_size
 
+    def setup(self, stage=None):
+        # Just store PyTorch TensorDatasets
+        self.train_ds = TensorDataset(self.X_train, self.y_train)
+        self.val_ds   = TensorDataset(self.X_val,   self.y_val)
+
     def train_dataloader(self):
-        return DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True)
+        return DataLoader(self.train_ds, batch_size=self.batch_size, shuffle=True)
 
     def val_dataloader(self):
-        return DataLoader(self.val_dataset, batch_size=self.batch_size)
-
-    def test_dataloader(self):
-        if self.test_dataset is not None:
-            return DataLoader(self.test_dataset, batch_size=self.batch_size)
-        else:
-            return None
+        return DataLoader(self.val_ds, batch_size=self.batch_size, shuffle=False)
