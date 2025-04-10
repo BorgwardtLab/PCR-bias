@@ -32,12 +32,11 @@ It includes scripts for deep learning model validation and motif discovery, aimi
 
 ## Dependencies
 
-All major dependencies can be found in `environment.yaml`.  
-You can create and activate a conda environment with the required packages by running:
+All major dependencies can be found in `requirements.txt`.  
+You can  install these packages by running:
 
 ```bash
-conda env create -f environment.yaml
-conda activate PCR-bias
+pip install -r requirements.txt
 ```
 ---
 
