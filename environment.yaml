@@ -13,6 +13,6 @@ dependencies:
       - torch==2.0.1+cu118
       - torchmetrics==0.7.2
       - scikit-learn==1.0.2
-      - seaborn==0.11.2
+      - seaborn==0.12.2
       - logomaker==0.8
       - captum==0.6.0
