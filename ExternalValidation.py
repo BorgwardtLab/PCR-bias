@@ -7,11 +7,11 @@ from sklearn.model_selection import train_test_split
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
 from utils.training_utils import get_data, DNADataModule, all_datasets
-from Model import CNN
+from model import CNN
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="1D CNN External Validation")
-    parser.add_argument("--filename", type=str, required=True)
+    parser.add_argument("--filename", type=str, choices=["Choi_et_al", "Erlich_et_al", "Gao_et_al", "GCall", "GCfix", "Koch_et_al", "Song_et_al"], required=True)
     parser.add_argument("--threshold", default='2perc')
     return parser.parse_args()
 

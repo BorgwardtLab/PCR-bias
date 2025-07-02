@@ -61,6 +61,7 @@ class CluMo:
             f"{self.motif_save_path}/motif_cluster_length{pwm.shape[1]}_No{cluster_idx}.png",
             dpi=200,
         )
+
         plt.close()
 
     def feature_attribution(self):
@@ -129,8 +130,8 @@ class CluMo:
             pwms_per_window_size[window_size] = pwms
         return seqs_onehot, seqs_label, pwms_per_window_size, window_sizes
 
-    def motif_plot(self, visualization=True):
-        if visualization:
+    def motif_plot(self, only_visualization=True):
+        if only_visualization:
             p_values_per_pwm = pd.read_pickle(
                 f"{self.motif_save_path}/significantly_enriched_motifs.pkl"
             )
@@ -179,15 +180,16 @@ class CluMo:
 
         for pwm, _, p_value, cluster_idx, _, _, _ in p_values_per_pwm:
             self.plot_pwm_logo(pwm, p_value, cluster_idx)
+        print(f'Motif plots saved at {self.motif_save_path}.')
 
 
 if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--filename", type=str, required=True)
+    parser.add_argument("--filename", type=str, choices=["Choi_et_al", "Erlich_et_al", "Gao_et_al", "GCall", "GCfix", "Koch_et_al", "Song_et_al"], required=True)
     parser.add_argument("--threshold", type=str, default='2perc')
     args = parser.parse_args()
 
     motif_analysis = CluMo(args.filename, args.threshold)
-    motif_analysis.motif_plot()
+    motif_analysis.motif_plot(only_visualization=True)

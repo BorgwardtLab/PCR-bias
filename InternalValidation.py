@@ -7,13 +7,13 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import average_precision_score, roc_auc_score
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
-from Model import CNN
+from model import CNN
 from utils.training_utils import get_data, DNADataModule
 
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="1D CNN Internal Validation")
-    parser.add_argument("--filename", type=str, required=True)
+    parser.add_argument("--filename", type=str, choices=["Choi_et_al", "Erlich_et_al", "Gao_et_al", "GCall", "GCfix", "Koch_et_al", "Song_et_al"], required=True)
     parser.add_argument("--threshold", type=str, default='2perc')
     return parser.parse_args()
 

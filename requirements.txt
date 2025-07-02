@@ -8,3 +8,4 @@ seaborn==0.12.2
 logomaker==0.8
 captum==0.6.0
 scipy==1.10.1
+pytorch-lightning==1.5.9
