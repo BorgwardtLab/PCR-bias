@@ -123,6 +123,7 @@ def main():
         )
         metrics_summary.append(fold_metrics)
     save_metrics(metrics_summary, filename, threshold)
+    print(f'Results saved at CNN/results/internal/{filename}/{threshold}/')
 
 if __name__ == "__main__":
     main()

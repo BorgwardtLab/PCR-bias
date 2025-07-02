@@ -17,23 +17,25 @@ It includes scripts for deep learning model validation and motif discovery, aimi
   Performs **5-fold internal validation** on the selected dataset.  
 
 - **ExternalValidation.py**  
-  Performs **external validation** on source and target datasets to measure generalization.  
+  Performs **external validation** on the selected dataset and evaluate all other datasets to measure generalization.  
 
 - **analysis/**  
   Contains additional scripts/notebooks for analyzing results and generating figures for the manuscript.  
 
 - **utils/**  
-  Common utility functions for data loading, preprocessing, model construction, and training.
+  Utility functions for data loading, preprocessing, model construction, and training.
 
 - **Data/**  
-  DNA sequence dataset with different threshold binarization,
+  DNA sequence dataset with binarization of PCR efficiency under different thresholds.
 
 ---
 
 ## Dependencies
+The software is implemented using Python 3.9.7.
 
 All major dependencies can be found in `requirements.txt`.  
-You can  install these packages by running:
+
+You can install these packages by running:
 
 ```bash
 pip install -r requirements.txt
@@ -54,13 +56,16 @@ python InternalValidation(ExternalValidation).py --filename dataset
 ```
 The results will be saved under `CNN/results/interal(external)/{dataset}/{threshold}/`
 
-The datasets used in this study include `"Choi_et_al",
-"Erlich_et_al",
-"Gao_et_al",
-"GCall",
-"GCfix",
-"Koch_et_al",
-"Song_et_al"`.
+The `dataset` should be specified as one of the 7 datasets used in this study: 
+`
+- "Choi_et_al",
+- "Erlich_et_al",
+- "Gao_et_al",
+- "GCall",
+- "GCfix",
+- "Koch_et_al",
+- "Song_et_al"
+`
 
 ---
 

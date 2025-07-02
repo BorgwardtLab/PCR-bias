@@ -189,7 +189,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--filename", type=str, choices=["Choi_et_al", "Erlich_et_al", "Gao_et_al", "GCall", "GCfix", "Koch_et_al", "Song_et_al"], required=True)
     parser.add_argument("--threshold", type=str, default='2perc')
+    parser.add_argument("--only_visualization", type=bool, default=True)
     args = parser.parse_args()
 
     motif_analysis = CluMo(args.filename, args.threshold)
-    motif_analysis.motif_plot(only_visualization=True)
+    motif_analysis.motif_plot(only_visualization=args.only_visualization)
