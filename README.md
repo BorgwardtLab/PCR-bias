@@ -38,6 +38,7 @@ All major dependencies can be found in `requirements.txt`.
 You can install these packages by running:
 
 ```bash
+python -m pip install pip==23.2.1
 pip install -r requirements.txt
 ```
 ---

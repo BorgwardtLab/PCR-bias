@@ -89,7 +89,7 @@ def main():
     best_model = CNN.load_from_checkpoint(best_model_path)
     metrics_df = evaluate_model_on_targets(best_model, args.filename, args.threshold)
     save_metrics(metrics_df, args.filename, args.threshold)
-    print(f'Results saved at CNN/results/external/{args.filename}/{threshold}/')
+    print(f'Results saved at CNN/results/external/{args.filename}/{args.threshold}/')
 
 if __name__ == "__main__":
     main()
