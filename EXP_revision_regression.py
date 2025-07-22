@@ -2,9 +2,7 @@ from model import CNN_1D_withPE
 import pandas as pd
 import torch
 import os
-import warnings
 import numpy as np
-warnings.filterwarnings("ignore")
 import pickle
 from torch import nn
 import itertools
@@ -22,6 +20,10 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split, StratifiedKFold
 from utils.training_utils import representation
 from torch.utils.data import DataLoader, TensorDataset
+import os
+os.environ["PYTHONWARNINGS"] = "ignore"
+import warnings
+warnings.filterwarnings("ignore")
 
 def get_ext_data(ext_file_name, threshold):
     seqs = pd.read_pickle(

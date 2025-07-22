@@ -9,7 +9,10 @@ import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
 from model import CNN
 from utils.training_utils import get_data, DNADataModule
-
+import os
+os.environ["PYTHONWARNINGS"] = "ignore"
+import warnings
+warnings.filterwarnings("ignore")
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="1D CNN Internal Validation")

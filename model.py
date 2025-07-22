@@ -3,6 +3,10 @@ import torch
 import torchmetrics
 from torch import nn
 import pytorch_lightning as pl
+import os
+os.environ["PYTHONWARNINGS"] = "ignore"
+import warnings
+warnings.filterwarnings("ignore")
 
 activation_dict = {
     "relu": nn.ReLU(),

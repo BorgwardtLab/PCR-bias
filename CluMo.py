@@ -4,9 +4,9 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import logomaker
-import warnings
 import pickle
 from pathlib import Path
+
 from utils.motif_utils import (
     find_most_significant_kmer_in_sequence,
     one_hot_to_DNA,
@@ -17,7 +17,9 @@ from utils.motif_utils import (
     perform_chi_squared_tests,
     representation,
 )
-
+import os
+os.environ["PYTHONWARNINGS"] = "ignore"
+import warnings
 warnings.filterwarnings("ignore")
 
 
